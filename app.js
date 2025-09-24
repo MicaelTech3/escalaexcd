@@ -23,13 +23,13 @@ const defaultEmployees = [
 const defaultSettings = {
   sectors: [
     { key: 'simuladores', label: 'Simuladores', slots: 4, requireUniqueDays: true, requireQC: false },
-    { key: 'xfood', label: 'Xfood', slots: 2, requireUniqueDays: true, requireQC: true },
-    { key: 'vrs', label: 'Vrs', slots: 5, requireUniqueDays: false, requireQC: false },
+    { key: 'xfood',       label: 'Xfood',       slots: 2, requireUniqueDays: true, requireQC: true  },
+    { key: 'vrs',         label: 'Vrs',         slots: 5, requireUniqueDays: false, requireQC: false },
   ],
 };
 
 // ================== Helpers ==================
-const $ = (q) => document.querySelector(q);
+const $  = (q) => document.querySelector(q);
 const $$ = (q) => Array.from(document.querySelectorAll(q));
 
 function readStorage(key, fallback) {
@@ -113,7 +113,7 @@ function renderSettings() {
             Exigir ≥1 QC
           </label>
           <label class="text-sm">
-            Slots
+            Staff
             <input type="number" min="0" value="${s.slots}" data-idx="${idx}" data-k="slots"
               class="w-16 ml-1 p-1 rounded bg-slate-800 border border-slate-700"/>
           </label>
@@ -122,7 +122,6 @@ function renderSettings() {
     box.appendChild(el);
   });
 
-  // Importante: sem { once: true } — permite editar quantas vezes quiser
   box.addEventListener('change', (ev) => {
     const idx = ev.target.getAttribute('data-idx');
     const k   = ev.target.getAttribute('data-k');
@@ -157,22 +156,17 @@ function generateSchedule(employees, settings) {
       const picked = [];
       for (let i = 0; i < shuffled.length && picked.length < s.slots; i++) {
         const p = shuffled[i];
-        // Sem duplicar pessoa em setores diferentes
-        if (Object.values(result).flat().some(x => x.name === p.name)) continue;
-        // Dias únicos no setor, se exigido
-        if (s.requireUniqueDays && picked.some(x => x.day === p.day)) continue;
+        if (Object.values(result).flat().some(x => x.name === p.name)) continue;      // sem duplicar pessoa
+        if (s.requireUniqueDays && picked.some(x => x.day === p.day)) continue;       // dias únicos no setor
         picked.push(p);
       }
 
-      // slots não preenchidos
       if (picked.length < s.slots) { ok = false; break; }
 
-      // Exigir pelo menos 1 QC, se existir QC no pool
       if (s.requireQC) {
         const hasQC = picked.some(x => x.qc);
         const anyQC = pool.some(x => x.qc);
         if (!hasQC && anyQC) {
-          // tentar forçar 1 QC mantendo regras
           const replacement = shuffled.find(x =>
             x.qc &&
             !Object.values(result).flat().some(y => y.name === x.name) &&
@@ -189,7 +183,6 @@ function generateSchedule(employees, settings) {
 
     if (!ok) continue;
 
-    // Garantia extra: ninguém repetido entre setores
     const names = Object.values(result).flat().map(p => p.name);
     if (new Set(names).size !== names.length) continue;
 
@@ -212,7 +205,7 @@ function renderResult() {
     const list = schedule[s.key] || [];
     card.innerHTML = `
       <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">${s.label} <span class="chip bg-slate-700 ml-2">${s.slots}</span></h3>
+        <h3 class="font-semibold">${s.label} <span class="chip bg-slate-700 ml-2">Staff: ${s.slots}</span></h3>
         <div class="text-xs text-slate-400">
           ${s.requireUniqueDays ? 'Sem folga repetida' : ''} ${s.requireQC ? ' • Exige QC' : ''}
         </div>
@@ -231,8 +224,7 @@ function renderResult() {
 // ================== Exportar PDF (Completo SEMPRE) ==================
 function exportPDF() {
   if (!schedule) { alert('Gere a escala antes.'); return; }
-  // jsPDF garantido global por index.html (window.jsPDF = window.jspdf.jsPDF)
-  const jsPDF = window.jsPDF;
+  const jsPDF = window.jsPDF;            // exposto no index.html
   if (!jsPDF) { alert('jsPDF não encontrado.'); return; }
 
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -287,7 +279,7 @@ function exportPDF() {
 
     doc.setFontSize(12); doc.setTextColor(30, 41, 59);
     doc.text(
-      `${s.label}  •  Slots: ${s.slots}  ${s.requireUniqueDays ? '• Sem folga repetida' : ''} ${s.requireQC ? '• Exige QC' : ''}`,
+      `${s.label}  •  Staff: ${s.slots}  ${s.requireUniqueDays ? '• Sem folga repetida' : ''} ${s.requireQC ? '• Exige QC' : ''}`,
       28, yStart
     );
 
@@ -338,7 +330,7 @@ $('#btn-reset-defaults').addEventListener('click', () => {
 
 $('#btn-generate').addEventListener('click', () => {
   const res = generateSchedule(employees, settings);
-  if (!res) { alert('Não foi possível gerar com as regras atuais. Ajuste slots/regras ou colaboradores.'); return; }
+  if (!res) { alert('Não foi possível gerar com as regras atuais. Ajuste Staff/regras ou colaboradores.'); return; }
   schedule = res; renderResult();
 });
 
