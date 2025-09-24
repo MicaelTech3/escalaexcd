@@ -1,0 +1,12 @@
+/* Rolagem suave para tabelas longas */
+.table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
+/* Chip pequeno (contadores/flags) */
+.chip {
+  border-radius: 999px;
+  padding: .15rem .5rem;
+  font-size: .75rem;
+}
