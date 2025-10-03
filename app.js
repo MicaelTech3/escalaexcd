@@ -8,7 +8,7 @@ const defaultEmployees = [
   { name: 'Leonardo', qc: false, day: 'Qua' },
   { name: 'João Pedro', qc: false, day: 'Qui' },
   { name: 'Thiago', qc: false, day: 'Qua' },
-  { name: 'Jullya', qc: true, day: 'Ter' },
+  { name: 'Jullya', qc: true,  day: 'Ter' },
   { name: 'Maria Eduarda', qc: false, day: 'Qua' },
   { name: 'William', qc: true, day: 'Seg' },
   { name: 'João Felipe', qc: false, day: 'Sex' },
@@ -19,7 +19,7 @@ const defaultEmployees = [
   { name: 'Cristian Gabriel', qc: false, day: 'Ter' },
 ];
 
-// Ajuste (pedido): Simuladores 4, Xfood 2 (exige ≥1 QC), Vrs 5
+// Ajuste: Simuladores 4, Xfood 2 (exige ≥1 QC), Vrs 5
 const defaultSettings = {
   sectors: [
     { key: 'simuladores', label: 'Simuladores', slots: 4, requireUniqueDays: true, requireQC: false },
@@ -30,8 +30,6 @@ const defaultSettings = {
 
 // ================== Helpers ==================
 const $  = (q) => document.querySelector(q);
-const $$ = (q) => Array.from(document.querySelectorAll(q));
-
 function readStorage(key, fallback) {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
   catch { return fallback; }
@@ -48,22 +46,20 @@ function renderEmployees() {
   tb.innerHTML = '';
   employees.forEach((e, i) => {
     const tr = document.createElement('tr');
-    tr.className = 'border-t border-slate-700 hover:bg-slate-800';
     tr.innerHTML = `
-      <td class="p-2">
-        <input value="${e.name}" data-i="${i}" data-k="name"
-          class="w-full bg-transparent border border-transparent focus:border-slate-600 rounded p-1" />
+      <td>
+        <input value="${e.name}" data-i="${i}" data-k="name" />
       </td>
-      <td class="p-2 text-center">
-        <input type="checkbox" ${e.qc ? 'checked' : ''} data-i="${i}" data-k="qc" class="accent-emerald-500" />
+      <td class="t-center">
+        <input type="checkbox" ${e.qc ? 'checked' : ''} data-i="${i}" data-k="qc" />
       </td>
-      <td class="p-2 text-center">
-        <select data-i="${i}" data-k="day" class="bg-slate-900 border border-slate-700 p-1 rounded">
+      <td>
+        <select data-i="${i}" data-k="day">
           ${['Seg','Ter','Qua','Qui','Sex'].map(d => `<option ${e.day===d?'selected':''}>${d}</option>`).join('')}
         </select>
       </td>
-      <td class="p-2 text-right">
-        <button data-i="${i}" class="btn-del px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-xs">Remover</button>
+      <td class="t-right">
+        <button data-i="${i}" class="btn-sm btn-secondary btn-del">Remover</button>
       </td>`;
     tb.appendChild(tr);
   });
@@ -96,26 +92,25 @@ function renderSettings() {
   box.innerHTML = '';
   settings.sectors.forEach((s, idx) => {
     const el = document.createElement('div');
-    el.className = 'p-3 rounded-lg bg-slate-900 border border-slate-700';
+    el.className = 'box';
     el.innerHTML = `
-      <div class="flex items-center justify-between">
+      <div class="row">
         <div>
-          <div class="font-semibold">${s.label}</div>
-          <div class="text-xs text-slate-400">Chave: ${s.key}</div>
+          <div style="font-weight:600">${s.label}</div>
+          <div style="font-size:12px;color:#9fb0d3">Chave: ${s.key}</div>
         </div>
-        <div class="flex items-center gap-3">
-          <label class="text-sm flex items-center gap-2">
-            <input type="checkbox" ${s.requireUniqueDays?'checked':''} data-idx="${idx}" data-k="requireUniqueDays" class="accent-blue-500"/>
+        <div class="row">
+          <label>
+            <input type="checkbox" ${s.requireUniqueDays?'checked':''} data-idx="${idx}" data-k="requireUniqueDays"/>
             Sem folga repetida
           </label>
-          <label class="text-sm flex items-center gap-2">
-            <input type="checkbox" ${s.requireQC?'checked':''} data-idx="${idx}" data-k="requireQC" class="accent-blue-500"/>
+          <label>
+            <input type="checkbox" ${s.requireQC?'checked':''} data-idx="${idx}" data-k="requireQC"/>
             Exigir ≥1 QC
           </label>
-          <label class="text-sm">
+          <label>
             Staff
-            <input type="number" min="0" value="${s.slots}" data-idx="${idx}" data-k="slots"
-              class="w-16 ml-1 p-1 rounded bg-slate-800 border border-slate-700"/>
+            <input type="number" min="0" value="${s.slots}" data-idx="${idx}" data-k="slots"/>
           </label>
         </div>
       </div>`;
@@ -156,8 +151,8 @@ function generateSchedule(employees, settings) {
       const picked = [];
       for (let i = 0; i < shuffled.length && picked.length < s.slots; i++) {
         const p = shuffled[i];
-        if (Object.values(result).flat().some(x => x.name === p.name)) continue;      // sem duplicar pessoa
-        if (s.requireUniqueDays && picked.some(x => x.day === p.day)) continue;       // dias únicos no setor
+        if (Object.values(result).flat().some(x => x.name === p.name)) continue;      // sem duplicar
+        if (s.requireUniqueDays && picked.some(x => x.day === p.day)) continue;       // dias únicos
         picked.push(p);
       }
 
@@ -196,113 +191,119 @@ function renderResult() {
   const box = $('#result');
   box.innerHTML = '';
   if (!schedule) {
-    box.innerHTML = '<div class="text-slate-400 text-sm">Ainda não gerou escala.</div>';
+    box.innerHTML = '<div class="hint">Ainda não gerou escala.</div>';
     return;
   }
   settings.sectors.forEach(s => {
-    const card = document.createElement('div');
-    card.className = 'p-4 rounded-xl bg-slate-900 border border-slate-700';
     const list = schedule[s.key] || [];
+    const card = document.createElement('div');
+    card.className = 'card-list';
     card.innerHTML = `
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold">${s.label} <span class="chip bg-slate-700 ml-2">Staff: ${s.slots}</span></h3>
-        <div class="text-xs text-slate-400">
+      <div class="title">
+        <div><strong>${s.label}</strong> <span class="chip">Staff: ${s.slots}</span></div>
+        <div style="font-size:12px;color:#9fb0d3">
           ${s.requireUniqueDays ? 'Sem folga repetida' : ''} ${s.requireQC ? ' • Exige QC' : ''}
         </div>
       </div>
-      <ul class="space-y-1">
+      <ul>
         ${list.map(p => `
-          <li class="flex items-center justify-between">
+          <li>
             <span>${p.name}</span>
-            <span class="text-xs text-slate-400">${p.qc ? '<span class="text-emerald-400">QC</span> • ' : ''}${p.day}</span>
+            <span style="font-size:12px;color:#9fb0d3">${p.qc ? '<span style="color:#34d399">QC</span> • ' : ''}${p.day}</span>
           </li>`).join('')}
       </ul>`;
     box.appendChild(card);
   });
 }
 
-// ================== Exportar PDF (Completo SEMPRE) ==================
+// ================== Exportar PDF (COMO NA IMAGEM) ==================
 function exportPDF() {
   if (!schedule) { alert('Gere a escala antes.'); return; }
-  const jsPDF = window.jsPDF;            // exposto no index.html
+
+  // jsPDF UMD (2.5+)
+  const jsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
   if (!jsPDF) { alert('jsPDF não encontrado.'); return; }
 
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+  // Monta uma lista única de linhas: Setor | Nome | Folga (+ qc para destaque)
+  const rows = [];
+  settings.sectors.forEach(s => {
+    (schedule[s.key] || []).forEach(p => {
+      rows.push({ setor: s.label, nome: p.name, folga: p.day, qc: !!p.qc });
+    });
+  });
 
   // Cabeçalho
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const dataStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-  const drawHeader = (title) => {
-    doc.setFillColor(15, 23, 42); // slate-900
-    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 64, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text(title, 40, 40);
-    doc.setFontSize(10);
-    doc.setTextColor(203, 213, 225); // slate-300
-    doc.text(`Gerado em ${dataStr}`, doc.internal.pageSize.getWidth() - 40, 40, { align: 'right' });
-    doc.setTextColor(15, 23, 42);
-  };
+  // Faixa superior
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, doc.internal.pageSize.getWidth(), 64, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.text('Escala — Completa', 40, 40);
+  doc.setFontSize(10);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Gerado em ${dataStr}`, doc.internal.pageSize.getWidth() - 40, 40, { align: 'right' });
 
-  const drawFooter = () => {
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
+  // Estilos “da imagem”
+  const headerBlue = [0, 45, 114];      // azul cabeçalho
+  const zebraGray  = [238, 238, 238];   // listrado
+  const lineColor  = [60, 60, 60];      // borda discreta
+  const qcGreen    = [170, 230, 180];   // verde destaque (QC)
+
+  doc.autoTable({
+    startY: 84,
+    head: [['Setor', 'Nome', 'Folga']],
+    body: rows.map(r => [r.setor, r.nome, r.folga]),
+    styles: {
+      fontSize: 11,
+      cellPadding: { top: 6, right: 10, bottom: 6, left: 10 },
+      lineColor,
+      lineWidth: 0.4,
+      textColor: [0, 0, 0],
+      halign: 'left',
+      valign: 'middle'
+    },
+    headStyles: {
+      fillColor: headerBlue,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      lineColor,
+      lineWidth: 0.6
+    },
+    alternateRowStyles: { fillColor: zebraGray },
+    bodyStyles: { fillColor: [255, 255, 255] },
+    columnStyles: {
+      0: { cellWidth: 150 },     // Setor
+      1: { cellWidth: 'auto' },  // Nome
+      2: { cellWidth: 80, halign: 'center' } // Folga
+    },
+    margin: { top: 72, right: 28, bottom: 60, left: 28 },
+
+    // Linha inteira verde quando QC = true
+    didParseCell: function (data) {
+      if (data.section === 'body') {
+        const idx = data.row.index;
+        if (rows[idx].qc) data.cell.styles.fillColor = qcGreen;
+      }
+    },
+
+    // Rodapé com paginação
+    didDrawPage: function (data) {
+      const total = doc.getNumberOfPages();
       doc.setFontSize(9);
-      doc.setTextColor(100, 116, 139); // slate-500
-      const w = doc.internal.pageSize.getWidth();
-      const h = doc.internal.pageSize.getHeight();
-      doc.text(`Página ${i} de ${pageCount}`, w - 40, h - 20, { align: 'right' });
-    }
-    doc.setTextColor(15, 23, 42);
-  };
-
-  // Conteúdo — uma tabela por setor
-  drawHeader('Escala — Completa');
-
-  let yStart = 80;
-  settings.sectors.forEach((s, idx) => {
-    const list = (schedule[s.key] || []).map((p, i) => ({
-      Ordem: i + 1,
-      Nome: p.name,
-      QC: p.qc ? 'QC' : '',
-      Folga: p.day
-    }));
-
-    if (idx > 0 && yStart + 120 > doc.internal.pageSize.getHeight()) {
-      doc.addPage();
-      drawHeader('Escala — Completa');
-      yStart = 80;
-    }
-
-    doc.setFontSize(12); doc.setTextColor(30, 41, 59);
-    doc.text(
-      `${s.label}  •  Staff: ${s.slots}  ${s.requireUniqueDays ? '• Sem folga repetida' : ''} ${s.requireQC ? '• Exige QC' : ''}`,
-      28, yStart
-    );
-
-    doc.autoTable({
-      startY: yStart + 10,
-      head: [["Ordem", "Nome", "QC", "Folga"]],
-      body: list.map(r => [r.Ordem, r.Nome, r.QC, r.Folga]),
-      styles: { fontSize: 10, cellPadding: 6, lineColor: [226,232,240], lineWidth: 0.5 },
-      headStyles: { fillColor: [30,41,59], textColor: 255, halign: 'left' },
-      alternateRowStyles: { fillColor: [248,250,252] },
-      bodyStyles: { textColor: [15,23,42] },
-      margin: { top: 72, right: 28, bottom: 40, left: 28 },
-    });
-
-    yStart = doc.lastAutoTable.finalY + 24;
-    if (yStart > doc.internal.pageSize.getHeight() - 80) {
-      doc.addPage();
-      drawHeader('Escala — Completa');
-      yStart = 80;
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Página ${data.pageNumber} de ${total}`,
+        doc.internal.pageSize.getWidth() - 40,
+        doc.internal.pageSize.getHeight() - 20,
+        { align: 'right' });
     }
   });
 
-  drawFooter();
   doc.save('escala_completa.pdf');
 }
 
